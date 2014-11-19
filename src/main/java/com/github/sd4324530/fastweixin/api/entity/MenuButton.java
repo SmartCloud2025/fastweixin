@@ -1,8 +1,8 @@
 package com.github.sd4324530.fastweixin.api.entity;
 
+import com.github.sd4324530.fastweixin.api.enums.MenuType;
 import com.github.sd4324530.fastweixin.util.JSONUtil;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -11,14 +11,29 @@ import java.util.List;
  */
 public class MenuButton implements Model {
 
+    /**
+     * 菜单类别
+     */
     private MenuType type;
 
+    /**
+     * 菜单上显示的文字
+     */
     private String name;
 
+    /**
+     * 菜单key，当MenuType值为CLICK时用于区别菜单
+     */
     private String key;
 
+    /**
+     * 菜单跳转的URL，当MenuType值为VIEW时用
+     */
     private String url;
 
+    /**
+     * 二级菜单列表，每个一级菜单下最多5个
+     */
     private List<MenuButton> sub_button;
 
     public MenuType getType() {
@@ -58,6 +73,9 @@ public class MenuButton implements Model {
     }
 
     public void setSub_button(List<MenuButton> sub_button) {
+        if(null == sub_button || sub_button.size() > 5) {
+            throw new RuntimeException("子菜单最多只有5个");
+        }
         this.sub_button = sub_button;
     }
 

@@ -1,7 +1,8 @@
 package com.github.sd4324530.fastweixin.api;
 
 import com.github.sd4324530.fastweixin.api.config.ApiConfig;
-import com.github.sd4324530.fastweixin.api.request.MenuRequest;
+import com.github.sd4324530.fastweixin.api.entity.Menu;
+import com.github.sd4324530.fastweixin.api.enums.ResultType;
 import com.github.sd4324530.fastweixin.api.response.BaseResponse;
 import com.github.sd4324530.fastweixin.api.response.GetMenuResponse;
 import com.github.sd4324530.fastweixin.util.BeanUtil;
@@ -9,44 +10,31 @@ import com.github.sd4324530.fastweixin.util.JSONUtil;
 
 /**
  * 菜单相关API
+ *
  * @author peiyu
+ * @since 1.2
  */
 public class MenuAPI extends BaseAPI {
-
-    public static final String CLICK = "click";
-
-    public static final String VIEW = "view";
-
-    //******************以下事件只支持iPhone5.4.1以上以及android5.4以上版本***************************************
-
-    public static final String SCANCODE_PUSH = "scancode_push";
-
-    public static final String SCANCODE_WAITMSG = "scancode_waitmsg";
-
-    public static final String PIC_SYSPHOTO = "pic_sysphoto";
-
-    public static final String PIC_PHOTO_OR_ALBUM = "pic_photo_or_album";
-
-    public static final String PIC_WEIXIN = "pic_weixin";
-
-    public static final String LOCATION_SELECT = "location_select";
-
     public MenuAPI(ApiConfig config) {
         super(config);
     }
 
     /**
      * 创建菜单
-     * @param request 请求对象
+     *
+     * @param menu 菜单对象
+     * @return 调用结果
      */
-    public void createMenu(MenuRequest request) {
-        BeanUtil.requireNonNull(request, "request is null");
+    public ResultType createMenu(Menu menu) {
+        BeanUtil.requireNonNull(menu, "menu is null");
         String url = BASE_API_URL + "cgi-bin/menu/create?access_token=#";
-        executePost(url, request.toJsonString());
+        BaseResponse response = executePost(url, menu.toJsonString());
+        return ResultType.get(response.getErrcode());
     }
 
     /**
      * 获取所有菜单
+     *
      * @return 菜单列表对象
      */
     public GetMenuResponse getMenu() {
@@ -54,7 +42,7 @@ public class MenuAPI extends BaseAPI {
         String url = BASE_API_URL + "cgi-bin/menu/get?access_token=#";
 
         BaseResponse r = executeGet(url);
-        if(null == r.getErrcode() || "".equals(r.getErrcode())) {
+        if (null == r.getErrcode() || "".equals(r.getErrcode())) {
             response = JSONUtil.toBean(r.getErrmsg(), GetMenuResponse.class);
         }
         return response;
@@ -62,12 +50,11 @@ public class MenuAPI extends BaseAPI {
 
     /**
      * 删除所有菜单
+     * @return 调用结果
      */
-    public void deleteMenu() {
+    public ResultType deleteMenu() {
         String url = BASE_API_URL + "cgi-bin/menu/delete?access_token=#";
-        executeGet(url);
+        BaseResponse response = executeGet(url);
+        return ResultType.get(response.getErrcode());
     }
-
-
-
 }

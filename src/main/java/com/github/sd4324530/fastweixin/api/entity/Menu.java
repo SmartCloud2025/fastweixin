@@ -10,6 +10,9 @@ import java.util.List;
  */
 public class Menu implements Model {
 
+    /**
+     * 一级菜单列表，最多3个
+     */
     private List<MenuButton> button;
 
     public List<MenuButton> getButton() {
@@ -17,6 +20,9 @@ public class Menu implements Model {
     }
 
     public void setButton(List<MenuButton> button) {
+        if(null == button || button.size() > 3) {
+            throw new RuntimeException("主菜单最多3个");
+        }
         this.button = button;
     }
 
