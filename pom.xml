@@ -4,7 +4,7 @@
     <groupId>com.github.sd4324530</groupId>
     <artifactId>fastweixin</artifactId>
     <url>https://github.com/sd4324530/fastweixin.git</url>
-    <version>1.2.3-SNAPSHOT</version>
+    <version>1.2.9-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>fastweixin</name>
     <description>quickly department weixin server</description>
@@ -45,8 +45,8 @@
 
     <!-- 声明的常量 标识各个jar版本 -->
     <properties>
-        <junit.version>4.11</junit.version>
-        <spring.version>3.2.12.RELEASE</spring.version>
+        <junit.version>4.12</junit.version>
+        <spring.version>3.2.13.RELEASE</spring.version>
     </properties>
 
     <dependencies>
@@ -97,13 +97,26 @@
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
-            <version>1.1.45</version>
+            <version>1.2.3</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpmime</artifactId>
             <version>4.3.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.1.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

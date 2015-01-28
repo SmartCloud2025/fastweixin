@@ -6,6 +6,8 @@ import com.github.sd4324530.fastweixin.api.response.BaseResponse;
 import com.github.sd4324530.fastweixin.api.response.QrcodeResponse;
 import com.github.sd4324530.fastweixin.util.BeanUtil;
 import com.github.sd4324530.fastweixin.util.JSONUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +19,9 @@ import java.util.Map;
  * @since 1.2
  */
 public class QrcodeAPI extends BaseAPI {
+
+    private static final Logger LOG = LoggerFactory.getLogger(QrcodeAPI.class);
+
     public QrcodeAPI(ApiConfig config) {
         super(config);
     }
@@ -33,16 +38,18 @@ public class QrcodeAPI extends BaseAPI {
         BeanUtil.requireNonNull(actionName, "actionName is null");
         BeanUtil.requireNonNull(sceneId, "actionInfo is null");
 
+        LOG.debug("创建二维码信息.....");
+
         QrcodeResponse response = null;
         String url = BASE_API_URL + "cgi-bin/qrcode/create?access_token=#";
 
         Map<String, Object> param = new HashMap<String, Object>();
         param.put("action_name", actionName);
-        Map<String, Object> action_info = new HashMap<String, Object>();
+        Map<String, Object> actionInfo = new HashMap<String, Object>();
         Map<String, Object> scene = new HashMap<String, Object>();
         scene.put("scene_id", sceneId);
-        action_info.put("scene", scene);
-        param.put("action_info", action_info);
+        actionInfo.put("scene", scene);
+        param.put("action_info", actionInfo);
         if (BeanUtil.nonNull(expireSeconds) && 0 != expireSeconds) {
             param.put("expire_seconds", expireSeconds);
         }

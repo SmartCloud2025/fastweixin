@@ -4,9 +4,14 @@ import com.github.sd4324530.fastweixin.handle.EventHandle;
 import com.github.sd4324530.fastweixin.handle.MessageHandle;
 import com.github.sd4324530.fastweixin.message.BaseMsg;
 import com.github.sd4324530.fastweixin.message.TextMsg;
+import com.github.sd4324530.fastweixin.message.aes.AesException;
+import com.github.sd4324530.fastweixin.message.aes.WXBizMsgCrypt;
 import com.github.sd4324530.fastweixin.message.req.*;
 import com.github.sd4324530.fastweixin.util.MessageUtil;
 import com.github.sd4324530.fastweixin.util.SignUtil;
+import com.github.sd4324530.fastweixin.util.StrUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -26,22 +31,24 @@ import static com.github.sd4324530.fastweixin.util.StrUtil.isNotBlank;
  */
 public abstract class WeixinSupport {
 
+    private static final Logger LOG  = LoggerFactory.getLogger(WeixinSupport.class);
+    //充当锁
+    private static final Object LOCK = new Object();
     /**
      * 微信消息处理器列表
      */
     private static List<MessageHandle> messageHandles;
-
     /**
      * 微信事件处理器列表
      */
-    private static List<EventHandle> eventHandles;
+    private static List<EventHandle>   eventHandles;
 
     /**
      * 子类重写，加入自定义的微信消息处理器，细化消息的处理
      *
      * @return 微信消息处理器列表
      */
-    protected List<MessageHandle> getMessageHandles() {
+    protected List<MessageHandle> initMessageHandles() {
         return null;
     }
 
@@ -50,7 +57,7 @@ public abstract class WeixinSupport {
      *
      * @return 微信事件处理器列表
      */
-    protected List<EventHandle> getEventHandles() {
+    protected List<EventHandle> initEventHandles() {
         return null;
     }
 
@@ -62,34 +69,59 @@ public abstract class WeixinSupport {
     protected abstract String getToken();
 
     /**
+     * 公众号APPID，使用消息加密模式时用户自行设置
+     *
+     * @return 微信公众平台提供的appid
+     */
+    protected abstract String getAppId();
+
+    /**
+     * 加密的密钥，使用消息加密模式时用户自行设置
+     *
+     * @return 用户自定义的密钥
+     */
+    protected abstract String getAESKey();
+
+    /**
      * 处理微信服务器发来的请求方法
      *
      * @param request http请求对象
      * @return 处理消息的结果，已经是接口要求的xml报文了
      */
-    String processRequest(HttpServletRequest request) {
-        Map<String, String> reqMap = MessageUtil.parseXml(request);
+    protected String processRequest(HttpServletRequest request) {
+        Map<String, String> reqMap = MessageUtil.parseXml(request, getToken(), getAppId(), getAESKey());
         String fromUserName = reqMap.get("FromUserName");
         String toUserName = reqMap.get("ToUserName");
         String msgType = reqMap.get("MsgType");
+
+        LOG.debug("收到消息,消息类型:{}", msgType);
 
         BaseMsg msg = null;
 
         if (msgType.equals(ReqType.EVENT)) {
             String eventType = reqMap.get("Event");
             String ticket = reqMap.get("Ticket");
+            QrCodeEvent qrCodeEvent = null;
             if (isNotBlank(ticket)) {
                 String eventKey = reqMap.get("EventKey");
-                QrCodeEvent event = new QrCodeEvent(eventKey, ticket);
-                buildBasicEvent(reqMap, event);
-                msg = handleQrCodeEvent(event);
-                if (isNull(msg)) {
-                    msg = processEventHandle(event);
+                LOG.debug("eventKey:{}", eventKey);
+                LOG.debug("ticket:{}", ticket);
+                qrCodeEvent = new QrCodeEvent(eventKey, ticket);
+                buildBasicEvent(reqMap, qrCodeEvent);
+                if(eventType.equals(EventType.SCAN)){
+                    msg = handleQrCodeEvent(qrCodeEvent);
+                    if (isNull(msg)) {
+                        msg = processEventHandle(qrCodeEvent);
+                    }
                 }
             }
             if (eventType.equals(EventType.SUBSCRIBE)) {
                 BaseEvent event = new BaseEvent();
-                buildBasicEvent(reqMap, event);
+                if(qrCodeEvent!=null){
+                    event = qrCodeEvent;
+                }else{
+                    buildBasicEvent(reqMap, event);
+                }
                 msg = handleSubscribe(event);
                 if (isNull(msg)) {
                     msg = processEventHandle(event);
@@ -103,6 +135,7 @@ public abstract class WeixinSupport {
                 }
             } else if (eventType.equals(EventType.CLICK)) {
                 String eventKey = reqMap.get("EventKey");
+                LOG.debug("eventKey:{}", eventKey);
                 MenuEvent event = new MenuEvent(eventKey);
                 buildBasicEvent(reqMap, event);
                 msg = handleMenuClickEvent(event);
@@ -111,6 +144,7 @@ public abstract class WeixinSupport {
                 }
             } else if (eventType.equals(EventType.VIEW)) {
                 String eventKey = reqMap.get("EventKey");
+                LOG.debug("eventKey:{}", eventKey);
                 MenuEvent event = new MenuEvent(eventKey);
                 buildBasicEvent(reqMap, event);
                 msg = handleMenuViewEvent(event);
@@ -132,6 +166,7 @@ public abstract class WeixinSupport {
         } else {
             if (msgType.equals(ReqType.TEXT)) {
                 String content = reqMap.get("Content");
+                LOG.debug("文本消息内容:{}", content);
                 TextReqMsg textReqMsg = new TextReqMsg(content);
                 buildBasicReqMsg(reqMap, textReqMsg);
                 msg = handleTextMsg(textReqMsg);
@@ -183,6 +218,7 @@ public abstract class WeixinSupport {
                 String title = reqMap.get("Title");
                 String description = reqMap.get("Description");
                 String url = reqMap.get("Url");
+                LOG.debug("链接消息地址:{}", url);
                 LinkReqMsg linkReqMsg = new LinkReqMsg(title, description, url);
                 buildBasicReqMsg(reqMap, linkReqMsg);
                 msg = handleLinkMsg(linkReqMsg);
@@ -196,22 +232,37 @@ public abstract class WeixinSupport {
             msg.setFromUserName(toUserName);
             msg.setToUserName(fromUserName);
             result = msg.toXml();
+            if (StrUtil.isNotBlank(getAESKey())) {
+                try {
+                    WXBizMsgCrypt pc = new WXBizMsgCrypt(getToken(), getAESKey(), getAppId());
+                    result = pc.encryptMsg(result, request.getParameter("timestamp"), request.getParameter("nonce"));
+                    LOG.debug("加密后密文:{}", result);
+                } catch (AesException e) {
+                    LOG.error("加密异常", e);
+                }
+            }
         }
         return result;
     }
 
-    //充当锁
-    private static final Object lock = new Object();
-
     private BaseMsg processMessageHandle(BaseReqMsg msg) {
         if (isEmpty(messageHandles)) {
-            synchronized (lock) {
-                messageHandles = this.getMessageHandles();
+            synchronized (LOCK) {
+                messageHandles = this.initMessageHandles();
             }
         }
         if (isNotEmpty(messageHandles)) {
             for (MessageHandle messageHandle : messageHandles) {
-                BaseMsg resultMsg = messageHandle.handle(msg);
+                BaseMsg resultMsg = null;
+                boolean result;
+                try {
+                    result = messageHandle.beforeHandle(msg);
+                } catch (Exception e) {
+                    result = false;
+                }
+                if (result) {
+                    resultMsg = messageHandle.handle(msg);
+                }
                 if (nonNull(resultMsg)) {
                     return resultMsg;
                 }
@@ -222,13 +273,22 @@ public abstract class WeixinSupport {
 
     private BaseMsg processEventHandle(BaseEvent event) {
         if (isEmpty(eventHandles)) {
-            synchronized (lock) {
-                eventHandles = this.getEventHandles();
+            synchronized (LOCK) {
+                eventHandles = this.initEventHandles();
             }
         }
         if (isNotEmpty(eventHandles)) {
             for (EventHandle eventHandle : eventHandles) {
-                BaseMsg resultMsg = eventHandle.handle(event);
+                BaseMsg resultMsg = null;
+                boolean result;
+                try {
+                    result = eventHandle.beforeHandle(event);
+                } catch (Exception e) {
+                    result = false;
+                }
+                if (result) {
+                    resultMsg = eventHandle.handle(event);
+                }
                 if (nonNull(resultMsg)) {
                     return resultMsg;
                 }
@@ -382,7 +442,7 @@ public abstract class WeixinSupport {
         req.setCreateTime(Long.parseLong(reqMap.get("CreateTime")));
     }
 
-    boolean isLegal(HttpServletRequest request) {
+    protected boolean isLegal(HttpServletRequest request) {
         String signature = request.getParameter("signature");
         String timestamp = request.getParameter("timestamp");
         String nonce = request.getParameter("nonce");

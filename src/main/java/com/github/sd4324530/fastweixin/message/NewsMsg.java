@@ -1,9 +1,9 @@
 package com.github.sd4324530.fastweixin.message;
 
+import com.github.sd4324530.fastweixin.message.util.MessageBuilder;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import com.github.sd4324530.fastweixin.message.util.MessageBuilder;
 
 /**
  * @author peiyu
@@ -11,10 +11,8 @@ import com.github.sd4324530.fastweixin.message.util.MessageBuilder;
 public class NewsMsg extends BaseMsg {
 
     private static final int WX_MAX_SIZE = 10;
-
-    private int maxSize = WX_MAX_SIZE;
-
-    List<Article> articles;
+    private              int maxSize     = WX_MAX_SIZE;
+    private List<Article> articles;
 
     public NewsMsg() {
         this.articles = new ArrayList<Article>(maxSize);
@@ -34,12 +32,11 @@ public class NewsMsg extends BaseMsg {
     }
 
     public void setMaxSize(int maxSize) {
-        if (maxSize > WX_MAX_SIZE || maxSize < 1) {
-            maxSize = WX_MAX_SIZE;
+        if (maxSize < WX_MAX_SIZE && maxSize >= 1) {
+            this.maxSize = maxSize;
         }
-        this.maxSize = maxSize;
-        if (articles != null && articles.size() > maxSize) {
-            articles = articles.subList(0, maxSize);
+        if (articles != null && articles.size() > this.maxSize) {
+            articles = articles.subList(0, this.maxSize);
         }
     }
 
@@ -48,8 +45,8 @@ public class NewsMsg extends BaseMsg {
     }
 
     public void setArticles(List<Article> articles) {
-        if (articles.size() > maxSize) {
-            this.articles = articles.subList(0, maxSize);
+        if (articles.size() > this.maxSize) {
+            this.articles = articles.subList(0, this.maxSize);
         } else {
             this.articles = articles;
         }
@@ -74,7 +71,6 @@ public class NewsMsg extends BaseMsg {
     public void add(Article article) {
         if (this.articles.size() < maxSize) {
             this.articles.add(article);
-        } else {
         }
     }
 

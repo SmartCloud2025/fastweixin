@@ -1,15 +1,16 @@
 package com.github.sd4324530.fastweixin.api.response;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 /**
  * @author peiyu
  */
 public class QrcodeResponse extends BaseResponse {
 
-    private String ticket;
-
-    private Integer expire_seconds;
-
-    private String url;
+    private String  ticket;
+    @JSONField(name = "expire_seconds")
+    private Integer expireSeconds;
+    private String  url;
 
     public String getTicket() {
         return ticket;
@@ -19,12 +20,12 @@ public class QrcodeResponse extends BaseResponse {
         this.ticket = ticket;
     }
 
-    public Integer getExpire_seconds() {
-        return expire_seconds;
+    public Integer getExpireSeconds() {
+        return expireSeconds;
     }
 
-    public void setExpire_seconds(Integer expire_seconds) {
-        this.expire_seconds = expire_seconds;
+    public void setExpireSeconds(Integer expireSeconds) {
+        this.expireSeconds = expireSeconds;
     }
 
     public String getUrl() {

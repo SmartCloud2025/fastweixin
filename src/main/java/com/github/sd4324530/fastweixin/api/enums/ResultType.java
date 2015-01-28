@@ -412,7 +412,17 @@ public enum ResultType {
     /**
      * 用户未授权该api
      */
-    USER_NOT_ALLOW_API(50001, "用户未授权该api");
+    USER_NOT_ALLOW_API(50001, "用户未授权该api"),
+
+    /**
+     * 无效的参数
+     */
+    INVALID_PARAM(61451, "无效的参数"),
+
+    /**
+     * 无效的参数
+     */
+    OTHER_ERROR(99999, "其他错误");
 
     /**
      * 结果码

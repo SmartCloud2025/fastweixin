@@ -12,8 +12,18 @@ csdn主页:[https://code.csdn.net/sd4324530/fastweixin](https://code.csdn.net/sd
 提供了基于`springmvc`以及基于`servlet`框架的控制器，集成了微信服务器绑定、监听所有类型消息的方法<br>
 使用时继承，重写即可，十分方便<br>
 v1.2.0开始支持高级接口的API，https请求基于org.apache.httpcomponents 4.3.X，json解析基于fastjson 1.1.X<br>
-框架中提供MenuAPI、MessageAPI、QrcodeAPI、UserAPI用于实现所有高级接口功能，使用极其简单<br>
+框架中提供MenuAPI、CustomAPI、QrcodeAPI、UserAPI、MediaAPI、OauthAPI用于实现所有高级接口功能，使用极其简单<br>
 内部实现token过期自动刷新，不用再关注token细节<br>
+
+v1.2.6开始支持微信消息安全模式，但由于jdk的限制，导致想使用安全模式，必须修改jdk内部的jar包<br>
+在官方网站下载：<br>
+[JCE无限制权限策略文件JDK7](http://www.oracle.com/technetwork/java/javase/downloads/jce-7-download-432124.html)<br>
+[JCE无限制权限策略文件JDK8](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html)<br>
+
+下载后解压，可以看到local_policy.jar和US_export_policy.jar以及readme.txt<br>
+如果安装了JRE，将两个jar文件放到%JRE_HOME%\lib\security目录下覆盖原来的文件<br>
+如果安装了JDK，将两个jar文件放到%JDK_HOME%\jre\lib\security目录下覆盖原来文件<br>
+
 
 ##基于`springmvc`项目的集成方法
 ```Java
@@ -27,6 +37,16 @@ public class WeixinController extends WeixinControllerSupport {
         protected String getToken() {
             return TOKEN;
         }
+        //使用安全模式时设置：APPID
+        @Override
+        protected String getAppId() {
+            return null;
+        }
+        //使用安全模式时设置：密钥
+        @Override
+        protected String getAESKey() {
+            return null;
+        }
         //重写父类方法，处理对应的微信消息
         @Override
         protected BaseMsg handleTextMsg(TextReqMsg msg) {
@@ -39,14 +59,14 @@ public class WeixinController extends WeixinControllerSupport {
          *这个机制就是为了应对这种情况，每个MessageHandle就是一个业务，只处理指定的那部分消息
          */
         @Override
-        protected List<MessageHandle> getMessageHandles() {
+        protected List<MessageHandle> initMessageHandles() {
                 List<MessageHandle> handles = new ArrayList<MessageHandle>();
                 handles.add(new MyMessageHandle());
                 return handles;
         }
         //1.1版本新增，重写父类方法，加入自定义微信事件处理器，同上
         @Override
-        protected List<EventHandle> getEventHandles() {
+        protected List<EventHandle> initEventHandles() {
                 List<EventHandle> handles = new ArrayList<EventHandle>();
                 handles.add(new MyEventHandle());
                 return handles;
@@ -64,6 +84,16 @@ public class WeixinServlet extends WeixinServletSupport {
         protected String getToken() {
             return TOKEN;
         }
+        //使用安全模式时设置：APPID
+        @Override
+        protected String getAppId() {
+            return null;
+        }
+        //使用安全模式时设置：密钥
+        @Override
+        protected String getAESKey() {
+            return null;
+        }
         //重写父类方法，处理对应的微信消息
         @Override
         protected BaseMsg handleTextMsg(TextReqMsg msg) {
@@ -73,14 +103,14 @@ public class WeixinServlet extends WeixinServletSupport {
         }
         //1.1版本新增，重写父类方法，加入自定义微信消息处理器
         @Override
-        protected List<MessageHandle> getMessageHandles() {
+        protected List<MessageHandle> initMessageHandles() {
             List<MessageHandle> handles = new ArrayList<MessageHandle>();
             handles.add(new MyMessageHandle());
             return handles;
         }
         //1.1版本新增，重写父类方法，加入自定义微信事件处理器
         @Override
-        protected List<EventHandle> getEventHandles() {
+        protected List<EventHandle> initEventHandles() {
             List<EventHandle> handles = new ArrayList<EventHandle>();
             handles.add(new MyEventHandle());
             return handles;
@@ -117,7 +147,7 @@ Maven 项目引入
 <dependency>
     <groupId>com.github.sd4324530</groupId>
     <artifactId>fastweixin</artifactId>
-    <version>1.2.2</version>
+    <version>1.2.8</version>
 </dependency>
 ```
 

@@ -1,31 +1,24 @@
 package com.github.sd4324530.fastweixin.api.response;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 /**
  * @author peiyu
  */
 public class GetUserInfoResponse extends BaseResponse {
 
     private Integer subscribe;
-
-    private String openid;
-
-    private String nickname;
-
+    private String  openid;
+    private String  nickname;
     private Integer sex;
-
-    private String language;
-
-    private String city;
-
-    private String province;
-
-    private String country;
-
-    private String headimgurl;
-
-    private Long subscribe_time;
-
-    private String unionid;
+    private String  language;
+    private String  city;
+    private String  province;
+    private String  country;
+    private String  headimgurl;
+    @JSONField(name = "subscribe_time")
+    private Long    subscribeTime;
+    private String  unionid;
 
     public Integer getSubscribe() {
         return subscribe;
@@ -99,12 +92,12 @@ public class GetUserInfoResponse extends BaseResponse {
         this.headimgurl = headimgurl;
     }
 
-    public Long getSubscribe_time() {
-        return subscribe_time;
+    public Long getSubscribeTime() {
+        return subscribeTime;
     }
 
-    public void setSubscribe_time(Long subscribe_time) {
-        this.subscribe_time = subscribe_time;
+    public void setSubscribeTime(Long subscribeTime) {
+        this.subscribeTime = subscribeTime;
     }
 
     public String getUnionid() {
